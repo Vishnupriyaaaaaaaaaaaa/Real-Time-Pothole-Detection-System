@@ -1,0 +1,3 @@
+# Real-Time-Pothole-Detection-Alert-and-Monitoring-System
+This project implements an intelligent pothole detection,alert and monitoring system using YOLOv8. The system(RaspberryPi) processes live or recorded video feeds to detect potholes in real-time, leveraging advanced CNN-based object detection.
+The metadata which includes pothole image, confidence values, locations are forwarded to a website which can be used for monitoring purposes.
