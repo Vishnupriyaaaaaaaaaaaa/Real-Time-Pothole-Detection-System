@@ -1,0 +1,7 @@
+train: C:\Users\pra4t\Downloads\PotholeDetection_Project\train\images
+val: C:\Users\pra4t\Downloads\PotholeDetection_Project\valid\images
+test: C:\Users\pra4t\Downloads\PotholeDetection_Project\test\images
+
+nc: 1
+names:
+  0: pothole
