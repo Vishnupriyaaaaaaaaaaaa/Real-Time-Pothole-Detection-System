@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Pothole Detection Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {margin:0; padding: 0; box-sizing: border-box;}
+        body {
+            font-family:'Poppins,sans-serif;
+            background:#0f172a;
+            color:#f8fafc;
+            padding:20px;
+        }
+        .header{
+            background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
+            padding:25px 30px;
+            border-radius:16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom:30px;
+            border:1px solid #334155;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:20px;
+        }
+        
+        .header-title h1{font-size: 30px;font-weight:700;display:flex;align-items:center;gap:10px; }
+        .header-title p{color:#94a3b8;font-size:14px;margin-top:5px;font-weight:300;}
+        
+
+        .stats-container{display:flex;gap:15px;}
+        .stat-box{
+            background: rgba(30,41,59,0.8);
+            backdrop-filter:blur(10px);
+            border:1px solid #334155;
+            padding:15px 25px;
+            border-radius:12px;
+            min-width:140px;
+        }
+        
+        .stat-box .label {font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8; }
+        .stat-box .value {font-size:24px;font-weight:700;margin-top:5px;color:#38bdf8;}
+        .refresh-btn {
+            padding:10px 20px;
+            background:#e11d48;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:14px;
+            font-weight:600;
+            transition:all 0.3s ease;
+            box-shadow:0 4px 10px rgba(225,29,72,0.3);
+        }
+        .refresh-btn:hover{background:#f43f5e;transform:translateY(-2px); }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        
+        .card {
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            border: 1px solid #334155;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+            border-color: #475569;
+        }
+        
+        .card-image-wrapper { position: relative; width: 100%; height: 220px; overflow: hidden; background: #000; }
+        .card img {
+            width: 100%; height: 100%; object-fit: cover;
+            cursor: pointer; transition: transform 0.5s ease; opacity: 0.9;
+        }
+        .card:hover img { transform: scale(1.05); opacity: 1; }
+        
+        .card-info { padding: 20px; }
+        .badge-danger {
+            background: #4c1d95; color: #c4b5fd; padding: 5px 12px;
+            border-radius: 20px; font-size: 12px; font-weight: 700;
+            display: inline-block; margin-bottom: 15px; border: 1px solid #5b21b6;
+        }
+        
+        .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; font-size: 13px; color: #cbd5e1;
+            padding-bottom: 8px; border-bottom: 1px solid #334155;
+        }
+        .info-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        
+        .info-label { font-weight: 600; color: #f8fafc; }
+        
+        .location-link {
+            color: #7dd3fc; text-decoration: none; font-weight: 600;
+            background: #0369a1; padding: 4px 10px; border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .location-link:hover { background: #0284c7; color: white; }
+        
+        /* Modal setup */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            margin: auto; display: block; max-width: 85%; max-height: 85%;
+            margin-top: 50px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #334155;
+        }
+        .close {
+            position: absolute; top: 20px; right: 40px; color: #94a3b8;
+            font-size: 40px; font-weight: 300; cursor: pointer; transition: color 0.2s;
+        }
+        .close:hover { color: #f43f5e; }
+        .loading { text-align: center; padding: 50px; color: #64748b; font-size: 18px; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h1> Pothole Detections Dashboard</h1>
+            
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="label">Total Detections</div>
+                <div class="value" id="total-count">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Last Sync</div>
+                <div class="value" id="last-update" style="font-size: 14px; margin-top: 13px;">Never</div>
+            </div>
+            <button class="refresh-btn" onclick="loadImages()">Refresh</button>
+        </div>
+    </div>
+    
+    <div class="gallery" id="gallery">
+        <div class="loading">Fetching data from cloud...</div>
+    </div>
+    
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close">×</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "potholeproject-15a36.firebaseapp.com",
+            databaseURL: "https://potholeproject-15a36-default-rtdb.firebaseio.com",
+            projectId: "potholeproject-15a36",
+            storageBucket: "potholeproject-15a36.firebasestorage.app",
+            messagingSenderId: "4658453066",
+            appId: "1:4658453066:web:177272812fda338a9924b3"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        function loadImages() {
+            const detectionsRef = ref(database, 'detections');
+            
+            onValue(detectionsRef, (snapshot) => {
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = '';
+                
+                const data = snapshot.val();
+                
+                if (!data) {
+                    gallery.innerHTML = '<div class="loading">No potholes detected yet. Ready for patrol! 🚓</div>';
+                    document.getElementById('total-count').textContent = '0';
+                    return;
+                }
+                
+                const detections = Object.entries(data).reverse(); // Newest first
+                
+                detections.forEach(([id, detection]) => {
+                    const card = createCard(id, detection);
+                    gallery.appendChild(card);
+                });
+                
+                document.getElementById('total-count').textContent = detections.length;
+                
+                // Format the time nicely
+                const now = new Date();
+                document.getElementById('last-update').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            });
+        }
+        
+        function createCard(id, detection) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            const date = new Date(detection.timestamp);
+            const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${detection.latitude},${detection.longitude}`;
+            
+            card.innerHTML = `
+                <div class="card-image-wrapper">
+                    <img src="data:image/jpeg;base64,${detection.image_base64}" 
+                         alt="Pothole Detection" 
+                         onclick="openModal('data:image/jpeg;base64,${detection.image_base64}')">
+                </div>
+                <div class="card-info">
+                    <div class="badge-danger">
+                         ${detection.pothole_count} Pothole${detection.pothole_count > 1 ? 's' : ''}
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Confidence</span>
+                        <span>${(detection.max_confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Location</span>
+                        <a href="${googleMapsLink}" target="_blank" class="location-link">
+                            📍 View on Map
+                        </a>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Date & Time</span>
+                        <span>${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+        
+        window.openModal = function(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = imageSrc;
+        };
+        
+        window.closeModal = function() {
+            document.getElementById('imageModal').style.display = 'none';
+        };
+        
+        window.loadImages = loadImages;
+        loadImages();
+        setInterval(loadImages, 30000);
+    </script>
+</body>
+</html>
